@@ -121,6 +121,11 @@ export type StrategyTemplate =
   | 'scalping'        // quick in/out
   | 'breakout'        // trade breakouts
   | 'degen'           // high leverage, high risk, YOLO
+  | 'ict_scalper'     // ICT: order blocks, FVGs, kill zones, liquidity sweeps
+  | 'smart_money_swing' // BOS/CHoCH for direction, OTE entries
+  | 'fibonacci_trader' // Swing detection, 0.618 entries, extension TPs
+  | 'wyckoff'         // Accumulation/distribution phase trading
+  | 'sr_bounce'       // Support/resistance with volume confirmation
   | 'custom';         // user-defined
 
 export type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
@@ -204,6 +209,7 @@ export interface MarketContext {
   recentTrades: Trade[];
   accountBalance: number;
   timestamp: number;
+  advancedIndicators?: AdvancedIndicatorAnalysis;
 }
 
 // --- Events ---
@@ -214,3 +220,175 @@ export type AgentEvent =
   | { type: 'error'; agentId: string; error: string; timestamp: number }
   | { type: 'status_change'; agentId: string; from: AgentStatus; to: AgentStatus; timestamp: number }
   | { type: 'risk_alert'; agentId: string; alert: string; timestamp: number };
+
+// --- Advanced Indicator Types ---
+
+// ICT / Smart Money Concepts
+export interface OrderBlock {
+  type: 'bullish' | 'bearish';
+  high: number;
+  low: number;
+  index: number;
+  timestamp: number;
+  mitigated: boolean;
+  strength: number; // displacement size / ATR
+}
+
+export interface FairValueGap {
+  type: 'bullish' | 'bearish';
+  top: number;
+  bottom: number;
+  startIndex: number;
+  filled: boolean;
+  size: number;
+}
+
+export interface BreakOfStructure {
+  type: 'bullish' | 'bearish';
+  price: number;
+  index: number;
+  timestamp: number;
+  previousSwing: number;
+}
+
+export interface ChangeOfCharacter {
+  type: 'bullish' | 'bearish';
+  price: number;
+  index: number;
+  timestamp: number;
+  previousTrend: 'bullish' | 'bearish';
+}
+
+export interface LiquidityZone {
+  type: 'equal_highs' | 'equal_lows' | 'prev_day_high' | 'prev_day_low' | 'prev_week_high' | 'prev_week_low';
+  price: number;
+  swept: boolean;
+}
+
+export interface KillZone {
+  current: 'london' | 'ny_open' | 'ny_close' | 'none';
+  isActive: boolean;
+}
+
+export interface PremiumDiscount {
+  swingHigh: number;
+  swingLow: number;
+  equilibrium: number;
+  currentZone: 'premium' | 'equilibrium' | 'discount';
+  distanceFromEquilibrium: number;
+}
+
+export interface ICTAnalysis {
+  orderBlocks: OrderBlock[];
+  fairValueGaps: FairValueGap[];
+  breakOfStructure: BreakOfStructure[];
+  changeOfCharacter: ChangeOfCharacter[];
+  liquidityZones: LiquidityZone[];
+  killZone: KillZone;
+  premiumDiscount: PremiumDiscount;
+  marketStructure: 'bullish' | 'bearish' | 'neutral';
+}
+
+// Fibonacci
+export interface SwingPoint {
+  type: 'high' | 'low';
+  price: number;
+  index: number;
+  timestamp: number;
+}
+
+export interface FibLevel {
+  level: number;
+  price: number;
+  label: string;
+}
+
+export interface FibonacciAnalysis {
+  swingHigh: SwingPoint | null;
+  swingLow: SwingPoint | null;
+  retracementLevels: FibLevel[];
+  extensionLevels: FibLevel[];
+  goldenPocket: { top: number; bottom: number } | null;
+  nearestLevel: FibLevel | null;
+  trendDirection: 'uptrend' | 'downtrend' | 'unknown';
+  currentPriceInGoldenPocket: boolean;
+}
+
+// Structure (Support/Resistance + Volume Profile)
+export interface SupportResistanceLevel {
+  price: number;
+  touches: number;
+  strength: number;
+  type: 'support' | 'resistance';
+  lastTouch: number;
+}
+
+export interface DynamicLevel {
+  ema21: number | null;
+  ema50: number | null;
+  ema200: number | null;
+  priceVsEma21: 'above' | 'below' | 'at';
+  priceVsEma50: 'above' | 'below' | 'at';
+  priceVsEma200: 'above' | 'below' | 'at';
+}
+
+export interface PreviousPeriodLevels {
+  prevDayHigh: number | null;
+  prevDayLow: number | null;
+  prevDayClose: number | null;
+  prevWeekHigh: number | null;
+  prevWeekLow: number | null;
+  prevWeekClose: number | null;
+}
+
+export interface VolumeProfile {
+  pointOfControl: number;
+  valueAreaHigh: number;
+  valueAreaLow: number;
+  highVolumeNodes: number[];
+  lowVolumeNodes: number[];
+}
+
+export interface StructureAnalysis {
+  horizontalLevels: SupportResistanceLevel[];
+  dynamicLevels: DynamicLevel;
+  previousPeriodLevels: PreviousPeriodLevels;
+  volumeProfile: VolumeProfile;
+  nearestSupport: number | null;
+  nearestResistance: number | null;
+}
+
+// Wyckoff
+export type WyckoffPhase = 'accumulation' | 'markup' | 'distribution' | 'markdown' | 'unknown';
+
+export interface Spring {
+  type: 'bullish_spring' | 'bearish_upthrust';
+  index: number;
+  price: number;
+  timestamp: number;
+}
+
+export interface EffortResult {
+  period: 'recent_5' | 'recent_10' | 'recent_20';
+  volumeTrend: 'rising' | 'falling' | 'flat';
+  priceTrend: 'rising' | 'falling' | 'flat';
+  interpretation: 'accumulation' | 'distribution' | 'strength' | 'weakness' | 'neutral';
+}
+
+export interface WyckoffAnalysis {
+  currentPhase: WyckoffPhase;
+  phaseConfidence: number;
+  volumePriceAnalysis: EffortResult[];
+  springs: Spring[];
+  effortVsResult: string;
+  signal: 'buy' | 'sell' | 'neutral';
+}
+
+// Combined Advanced Analysis
+export interface AdvancedIndicatorAnalysis {
+  ict: ICTAnalysis | null;
+  fibonacci: FibonacciAnalysis | null;
+  structure: StructureAnalysis | null;
+  wyckoff: WyckoffAnalysis | null;
+  timestamp: number;
+}

@@ -117,9 +117,134 @@ ${recentTrades.slice(-5).map(t =>
   }
 
   prompt += `\n\n## Account Balance: $${accountBalance.toFixed(2)}`;
+
+  // Add advanced indicators if available
+  if (context.advancedIndicators) {
+    prompt += formatAdvancedIndicators(context.advancedIndicators);
+  }
+
   prompt += `\n\nAnalyze the data above and provide your trading decision as JSON.`;
 
   return prompt;
+}
+
+/**
+ * Format advanced indicators for the prompt
+ */
+function formatAdvancedIndicators(advanced: any): string {
+  let section = `\n\n## Advanced Analysis`;
+
+  // ICT / Smart Money
+  if (advanced.ict) {
+    section += `\n\n### ICT / Smart Money Concepts`;
+    section += `\n- Market Structure: ${advanced.ict.marketStructure.toUpperCase()}`;
+    section += `\n- Kill Zone Active: ${advanced.ict.killZone.isActive ? 'YES (' + advanced.ict.killZone.current + ')' : 'NO'}`;
+    section += `\n- Current Zone: ${advanced.ict.premiumDiscount.currentZone} (${advanced.ict.premiumDiscount.distanceFromEquilibrium.toFixed(2)}% from equilibrium)`;
+    
+    if (advanced.ict.orderBlocks.length > 0) {
+      const validOBs = advanced.ict.orderBlocks.filter((ob: any) => !ob.mitigated).slice(-3);
+      if (validOBs.length > 0) {
+        section += `\n- Valid Order Blocks: ${validOBs.map((ob: any) => 
+          `${ob.type} @ $${ob.low.toFixed(2)}-$${ob.high.toFixed(2)} (strength: ${ob.strength.toFixed(1)})`
+        ).join(', ')}`;
+      }
+    }
+    
+    if (advanced.ict.fairValueGaps.length > 0) {
+      const unfilledFVGs = advanced.ict.fairValueGaps.filter((fvg: any) => !fvg.filled).slice(-3);
+      if (unfilledFVGs.length > 0) {
+        section += `\n- Unfilled FVGs: ${unfilledFVGs.map((fvg: any) => 
+          `${fvg.type} @ $${fvg.bottom.toFixed(2)}-$${fvg.top.toFixed(2)}`
+        ).join(', ')}`;
+      }
+    }
+    
+    if (advanced.ict.liquidityZones.length > 0) {
+      const unsweptLiq = advanced.ict.liquidityZones.filter((liq: any) => !liq.swept).slice(-3);
+      if (unsweptLiq.length > 0) {
+        section += `\n- Unswept Liquidity: ${unsweptLiq.map((liq: any) => 
+          `${liq.type} @ $${liq.price.toFixed(2)}`
+        ).join(', ')}`;
+      }
+    }
+  }
+
+  // Fibonacci
+  if (advanced.fibonacci) {
+    section += `\n\n### Fibonacci Analysis`;
+    section += `\n- Trend: ${advanced.fibonacci.trendDirection.toUpperCase()}`;
+    
+    if (advanced.fibonacci.swingHigh && advanced.fibonacci.swingLow) {
+      section += `\n- Swing High: $${advanced.fibonacci.swingHigh.price.toFixed(2)}`;
+      section += `\n- Swing Low: $${advanced.fibonacci.swingLow.price.toFixed(2)}`;
+    }
+    
+    if (advanced.fibonacci.goldenPocket) {
+      section += `\n- Golden Pocket: $${advanced.fibonacci.goldenPocket.bottom.toFixed(2)}-$${advanced.fibonacci.goldenPocket.top.toFixed(2)}`;
+      section += `\n- Price in Golden Pocket: ${advanced.fibonacci.currentPriceInGoldenPocket ? 'YES' : 'NO'}`;
+    }
+    
+    if (advanced.fibonacci.nearestLevel) {
+      section += `\n- Nearest Fib Level: ${advanced.fibonacci.nearestLevel.label} @ $${advanced.fibonacci.nearestLevel.price.toFixed(2)}`;
+    }
+    
+    if (advanced.fibonacci.extensionLevels.length > 0) {
+      section += `\n- Extension Targets: ${advanced.fibonacci.extensionLevels.slice(0, 3).map((ext: any) => 
+        `${ext.label} @ $${ext.price.toFixed(2)}`
+      ).join(', ')}`;
+    }
+  }
+
+  // Structure (S/R + Volume Profile)
+  if (advanced.structure) {
+    section += `\n\n### Structure Analysis`;
+    
+    if (advanced.structure.nearestSupport) {
+      section += `\n- Nearest Support: $${advanced.structure.nearestSupport.toFixed(2)}`;
+    }
+    
+    if (advanced.structure.nearestResistance) {
+      section += `\n- Nearest Resistance: $${advanced.structure.nearestResistance.toFixed(2)}`;
+    }
+    
+    section += `\n- Price vs EMA21: ${advanced.structure.dynamicLevels.priceVsEma21}`;
+    section += `\n- Price vs EMA50: ${advanced.structure.dynamicLevels.priceVsEma50}`;
+    section += `\n- Price vs EMA200: ${advanced.structure.dynamicLevels.priceVsEma200}`;
+    
+    if (advanced.structure.volumeProfile) {
+      section += `\n- Volume POC: $${advanced.structure.volumeProfile.pointOfControl.toFixed(2)}`;
+      section += `\n- Value Area: $${advanced.structure.volumeProfile.valueAreaLow.toFixed(2)}-$${advanced.structure.volumeProfile.valueAreaHigh.toFixed(2)}`;
+    }
+    
+    if (advanced.structure.horizontalLevels.length > 0) {
+      const topLevels = advanced.structure.horizontalLevels.slice(0, 3);
+      section += `\n- Key S/R Levels: ${topLevels.map((lvl: any) => 
+        `${lvl.type} @ $${lvl.price.toFixed(2)} (${lvl.touches} touches)`
+      ).join(', ')}`;
+    }
+  }
+
+  // Wyckoff
+  if (advanced.wyckoff) {
+    section += `\n\n### Wyckoff Analysis`;
+    section += `\n- Current Phase: ${advanced.wyckoff.currentPhase.toUpperCase()} (${advanced.wyckoff.phaseConfidence}% confidence)`;
+    section += `\n- Signal: ${advanced.wyckoff.signal.toUpperCase()}`;
+    section += `\n- Effort vs Result: ${advanced.wyckoff.effortVsResult}`;
+    
+    if (advanced.wyckoff.springs.length > 0) {
+      const recentSpring = advanced.wyckoff.springs[advanced.wyckoff.springs.length - 1];
+      section += `\n- Recent Spring/Upthrust: ${recentSpring.type} @ $${recentSpring.price.toFixed(2)}`;
+    }
+    
+    if (advanced.wyckoff.volumePriceAnalysis.length > 0) {
+      section += `\n- Volume-Price Analysis:`;
+      advanced.wyckoff.volumePriceAnalysis.forEach((vpa: any) => {
+        section += `\n  - ${vpa.period}: ${vpa.interpretation} (price ${vpa.priceTrend}, volume ${vpa.volumeTrend})`;
+      });
+    }
+  }
+
+  return section;
 }
 
 /**
@@ -176,6 +301,59 @@ function getStrategyInstructions(template: StrategyTemplate): string {
 - Funding rate flips and liquidation cascades are opportunities
 - Trust your read, but always use a stop loss
 - GO BIG OR GO HOME`;
+
+    case 'ict_scalper':
+      return `You are an ICT/SMART MONEY SCALPER.
+- Focus on Order Blocks (last opposite candle before strong move)
+- Trade Fair Value Gaps (FVGs) — enter when price returns to unfilled gaps
+- Only trade during Kill Zones: London (02:00-05:00 UTC), NY Open (12:00-15:00 UTC), NY Close (19:00-21:00 UTC)
+- Look for liquidity sweeps — equal highs/lows getting taken out before reversal
+- Enter in discount zones for longs, premium zones for shorts
+- Stop loss beyond the order block
+- Target next liquidity level or opposing FVG
+- Market structure must align: only long in bullish structure, short in bearish structure`;
+
+    case 'smart_money_swing':
+      return `You are a SMART MONEY SWING trader using ICT + Fibonacci.
+- Use Break of Structure (BOS) and Change of Character (CHoCH) to determine trend direction
+- Wait for pullbacks to OTE (Optimal Trade Entry): Order Block + 0.618-0.65 Fibonacci level
+- Enter only when price is in the golden pocket (0.618-0.65 retracement)
+- Confirm with order block mitigation test
+- Stop loss below/above the swing low/high
+- Target Fibonacci extensions: 1.618, 2.0, 2.618
+- Be patient — wait for the full setup to align`;
+
+    case 'fibonacci_trader':
+      return `You are a FIBONACCI trader.
+- Identify major swing highs and swing lows automatically
+- Enter on 0.618 retracement (golden pocket preferred: 0.618-0.65)
+- Confirm with volume and candlestick patterns at the level
+- Stop loss beyond 0.786 level
+- Take profits at Fibonacci extensions: 1.272, 1.618, 2.0, 2.618
+- Trail stops as price reaches each extension
+- Respect trend direction: uptrend = long retracements, downtrend = short rallies`;
+
+    case 'wyckoff':
+      return `You are a WYCKOFF METHOD trader.
+- Identify current phase: Accumulation, Markup, Distribution, or Markdown
+- BUY during accumulation phase, especially on springs (false breakdown then reversal)
+- SELL during distribution phase, especially on upthrusts (false breakout then reversal)
+- Analyze effort vs result: High volume + small move = absorption/reversal coming
+- Low volume + big move = lack of opposition (trend will continue)
+- Avoid trading during unclear phases
+- Wait for phase confirmation before entering
+- Volume must confirm price action`;
+
+    case 'sr_bounce':
+      return `You are a SUPPORT/RESISTANCE BOUNCE trader.
+- Identify strong horizontal S/R levels (3+ touches, high strength score)
+- Use dynamic levels (EMA 21, 50, 200) as additional confirmation
+- Enter on bounces off support (long) or resistance (short)
+- Volume must confirm: higher volume on bounce = stronger signal
+- Use volume profile Point of Control as additional confluence
+- Tight stops below/above the S/R level
+- Target next major S/R level
+- Best in ranging markets or during pullbacks in trends`;
 
     case 'custom':
     default:
