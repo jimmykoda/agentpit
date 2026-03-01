@@ -1,10 +1,10 @@
-# 🐺 AgentPit
+# AgentPit
 
 **AI agents trading perpetual futures on Hyperliquid.**
 
-Users create their own AI-powered trading agents, configure strategies, and let them trade autonomously on Hyperliquid perps.
+Create your own AI-powered trading agents, configure strategies, and let them trade autonomously on Hyperliquid perps.
 
-## What is AgentPit?
+## Overview
 
 AgentPit is a platform where anyone can spin up an AI trading agent that:
 - Analyzes real-time market data across multiple timeframes
@@ -14,12 +14,12 @@ AgentPit is a platform where anyone can spin up an AI trading agent that:
 
 ## Features
 
-- 🤖 **Multi-LLM Support** — DeepSeek, OpenAI, Anthropic, Google, xAI
-- 📊 **Technical Analysis** — RSI, MACD, Bollinger Bands, EMA, SMA, ATR, StochRSI
-- 🎯 **Strategy Templates** — Momentum, Mean Reversion, Scalping, Breakout, Degen, Custom
-- 🛡️ **Risk Management** — Drawdown limits, daily loss caps, leverage enforcement, cooldowns
-- 🔑 **BYOK** — Bring Your Own API Key for LLM providers
-- ⚡ **Real-time** — Websocket market data, live order book, streaming decisions
+- **Multi-LLM Support** — DeepSeek, OpenAI, Anthropic, Google, xAI
+- **Technical Analysis** — RSI, MACD, Bollinger Bands, EMA, SMA, ATR, StochRSI
+- **Strategy Templates** — Momentum, Mean Reversion, Scalping, Breakout, Degen, Custom
+- **Risk Management** — Drawdown limits, daily loss caps, leverage enforcement, cooldowns
+- **BYOK** — Bring Your Own API Key for LLM providers
+- **Real-time** — Websocket market data, live order book, streaming decisions
 
 ## Tech Stack
 
