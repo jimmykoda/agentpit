@@ -9,7 +9,7 @@ import { LayoutDashboard, PlusCircle, Trophy, Wallet } from 'lucide-react'
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/create', label: 'Create Agent', icon: PlusCircle },
-  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

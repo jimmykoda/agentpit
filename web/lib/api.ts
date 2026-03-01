@@ -103,7 +103,7 @@ const mockPositions: Record<string, Position | null> = {
     leverage: 5,
     stopLoss: 91665,
     takeProfit: 99225,
-    unrealizedPnl: 450.25,
+    unrealizedPnl: 0,
     openedAt: Date.now() - 3600000,
   },
   'agent-2': null,
@@ -117,7 +117,7 @@ const mockPositions: Record<string, Position | null> = {
     leverage: 10,
     stopLoss: 147.65,
     takeProfit: 142.75,
-    unrealizedPnl: -122.50,
+    unrealizedPnl: 0,
     openedAt: Date.now() - 900000,
   },
 }
@@ -416,19 +416,13 @@ export const api = {
     await delay(250)
     const totalAgents = mockAgents.length
     const activeAgents = mockAgents.filter(a => a.status === 'running').length
-    const totalPnl = mockAgents.reduce((sum, agent) => {
-      const pos = mockPositions[agent.id]
-      return sum + (pos?.unrealizedPnl || 0)
-    }, 8765.75) // Base realized PnL
-    const accountBalance = 50000
-    
     return {
       totalAgents,
       activeAgents,
-      totalPnl,
-      accountBalance,
-      dailyPnl: 450.25,
-      weeklyPnl: 1250.75,
+      totalPnl: 0,
+      accountBalance: 0,
+      dailyPnl: 0,
+      weeklyPnl: 0,
     }
   },
 }

@@ -61,11 +61,11 @@ export default function LandingPage() {
       <section className="container mx-auto px-4 py-24 border-t border-neutral-800">
         <div className="grid md:grid-cols-3 gap-8 text-center">
           <div>
-            <div className="text-4xl font-bold mb-2">2,847</div>
+            <div className="text-4xl font-bold mb-2">127</div>
             <div className="text-neutral-400">Active Agents</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">$2.4M</div>
+            <div className="text-4xl font-bold mb-2">$184K</div>
             <div className="text-neutral-400">Total Volume</div>
           </div>
           <div>
