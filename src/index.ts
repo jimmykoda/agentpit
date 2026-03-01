@@ -76,22 +76,22 @@ async function main() {
   agent.on('event', (event) => {
     switch (event.type) {
       case 'decision':
-        log.info(`📊 Decision: ${event.decision.action} | Confidence: ${event.decision.confidence}%`);
+        log.info(`Decision: ${event.decision.action} | Confidence: ${event.decision.confidence}%`);
         break;
       case 'trade':
-        log.info(`💰 Trade: ${event.trade.action} ${event.trade.side} ${event.trade.size} ${event.trade.symbol} @ $${event.trade.price}`);
+        log.info(`Trade: ${event.trade.action} ${event.trade.side} ${event.trade.size} ${event.trade.symbol} @ $${event.trade.price}`);
         if (event.trade.realizedPnl !== undefined) {
-          log.info(`   PnL: $${event.trade.realizedPnl.toFixed(2)}`);
+          log.info(`  PnL: $${event.trade.realizedPnl.toFixed(2)}`);
         }
         break;
       case 'risk_alert':
-        log.warn(`⚠️ Risk Alert: ${event.alert}`);
+        log.warn(`Risk Alert: ${event.alert}`);
         break;
       case 'error':
-        log.error(`❌ Error: ${event.error}`);
+        log.error(`Error: ${event.error}`);
         break;
       case 'status_change':
-        log.info(`🔄 Status: ${event.from} → ${event.to}`);
+        log.info(`Status: ${event.from} -> ${event.to}`);
         break;
     }
   });

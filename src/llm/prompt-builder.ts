@@ -175,7 +175,7 @@ function getStrategyInstructions(template: StrategyTemplate): string {
 - Quick to cut losses, quick to take large positions
 - Funding rate flips and liquidation cascades are opportunities
 - Trust your read, but always use a stop loss
-- GO BIG OR GO HOME 🎰`;
+- GO BIG OR GO HOME`;
 
     case 'custom':
     default:
