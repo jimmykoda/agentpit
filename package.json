@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "bullmq": "^5.70.1",
     "dotenv": "^17.3.1",
     "hyperliquid": "^1.7.7",

@@ -36,6 +36,23 @@ export const config = {
     url: process.env.REDIS_URL || 'redis://localhost:6379',
   },
 
+  // Supabase (database)
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    anonKey: process.env.SUPABASE_ANON_KEY || '',
+  },
+
+  // Encryption (for BYOK API keys)
+  encryption: {
+    masterKey: process.env.ENCRYPTION_KEY || '',
+  },
+
+  // Scheduler
+  scheduler: {
+    concurrency: parseInt(process.env.SCHEDULER_CONCURRENCY || '5', 10),
+    maxJobsPerSecond: parseInt(process.env.SCHEDULER_MAX_JOBS_PER_SEC || '10', 10),
+  },
+
   // Agent defaults
   agent: {
     defaultDecisionIntervalMs: 5 * 60 * 1000, // 5 minutes

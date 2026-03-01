@@ -1,6 +1,6 @@
 // ============================================
 // AgentPit - Main Entry Point
-// Launch a single agent for testing/demo
+// Multi-agent trading system with database persistence
 // ============================================
 
 import { MarketDataService } from './market/market-data';
@@ -8,7 +8,7 @@ import { IndicatorEngine } from './indicators/indicator-engine';
 import { LLMRouter } from './llm/llm-router';
 import { RiskManager } from './risk/risk-manager';
 import { TradeExecutor } from './trading/trade-executor';
-import { AgentLoop } from './engine/agent-loop';
+import { AgentManager } from './engine/agent-manager';
 import { AgentConfig } from './types';
 import { config } from './config';
 import { createLogger } from './utils/logger';
@@ -34,10 +34,23 @@ async function main() {
   // Initialize trade executor
   await executor.initialize();
 
-  // Create a demo agent config
-  const agentConfig: AgentConfig = {
+  // Create Agent Manager
+  const manager = new AgentManager(marketData, indicators, llm, risk, executor);
+
+  // Start the manager (starts scheduler worker)
+  await manager.start();
+
+  // Load any agents from database that were running
+  await manager.loadAgents();
+
+  // --- Demo: Create and start multiple agents ---
+
+  log.info('--- Creating demo agents ---');
+
+  // Agent 1: BTC Momentum Trader
+  const btcAgent: Omit<AgentConfig, 'createdAt' | 'updatedAt'> = {
     id: uuid(),
-    name: 'AgentPit Demo',
+    name: 'BTC Momentum Bot',
     userId: 'demo-user',
 
     llmProvider: 'deepseek',
@@ -45,78 +58,154 @@ async function main() {
     apiKey: config.llm.deepseek.apiKey,
 
     symbol: 'BTC',
-    maxPositionSize: config.agent.defaultMaxPositionSize,
-    maxLeverage: config.agent.defaultMaxLeverage,
-    decisionIntervalMs: config.agent.defaultDecisionIntervalMs,
+    maxPositionSize: 2000,
+    maxLeverage: 10,
+    decisionIntervalMs: 5 * 60 * 1000, // 5 minutes
 
     strategy: {
       template: 'momentum',
-      timeframes: ['5m', '15m', '1h', '4h'],
-      indicators: ['rsi', 'macd', 'bollinger', 'ema', 'atr', 'stochRsi'],
+      timeframes: ['5m', '15m', '1h'],
+      indicators: ['rsi', 'macd', 'ema', 'atr'],
     },
 
     risk: {
-      maxDrawdownPercent: config.agent.defaultMaxDrawdown,
-      maxDailyLossPercent: config.agent.defaultMaxDailyLoss,
-      stopLossPercent: config.agent.defaultStopLoss,
-      takeProfitPercent: config.agent.defaultTakeProfit,
-      maxOpenPositions: config.agent.defaultMaxOpenPositions,
-      cooldownAfterLossMs: config.agent.defaultCooldownMs,
+      maxDrawdownPercent: 15,
+      maxDailyLossPercent: 10,
+      stopLossPercent: 4,
+      takeProfitPercent: 8,
+      maxOpenPositions: 2,
+      cooldownAfterLossMs: 2 * 60 * 1000,
     },
 
     status: 'idle',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
   };
 
-  // Create and start the agent loop
-  const agent = new AgentLoop(agentConfig, marketData, indicators, llm, risk, executor);
+  // Agent 2: ETH Scalper
+  const ethAgent: Omit<AgentConfig, 'createdAt' | 'updatedAt'> = {
+    id: uuid(),
+    name: 'ETH Scalper',
+    userId: 'demo-user',
+
+    llmProvider: 'deepseek',
+    llmModel: config.llm.deepseek.model,
+    apiKey: config.llm.deepseek.apiKey,
+
+    symbol: 'ETH',
+    maxPositionSize: 1500,
+    maxLeverage: 15,
+    decisionIntervalMs: 2 * 60 * 1000, // 2 minutes
+
+    strategy: {
+      template: 'scalping',
+      timeframes: ['1m', '5m', '15m'],
+      indicators: ['rsi', 'bollinger', 'stochRsi', 'volume'],
+    },
+
+    risk: {
+      maxDrawdownPercent: 10,
+      maxDailyLossPercent: 8,
+      stopLossPercent: 2,
+      takeProfitPercent: 4,
+      maxOpenPositions: 3,
+      cooldownAfterLossMs: 1 * 60 * 1000,
+    },
+
+    status: 'idle',
+  };
+
+  // Agent 3: SOL Mean Reversion
+  const solAgent: Omit<AgentConfig, 'createdAt' | 'updatedAt'> = {
+    id: uuid(),
+    name: 'SOL Mean Reversion',
+    userId: 'demo-user',
+
+    llmProvider: 'deepseek',
+    llmModel: config.llm.deepseek.model,
+    apiKey: config.llm.deepseek.apiKey,
+
+    symbol: 'SOL',
+    maxPositionSize: 1000,
+    maxLeverage: 5,
+    decisionIntervalMs: 10 * 60 * 1000, // 10 minutes
+
+    strategy: {
+      template: 'mean_reversion',
+      timeframes: ['15m', '1h', '4h'],
+      indicators: ['rsi', 'bollinger', 'sma', 'atr'],
+    },
+
+    risk: {
+      maxDrawdownPercent: 20,
+      maxDailyLossPercent: 12,
+      stopLossPercent: 6,
+      takeProfitPercent: 12,
+      maxOpenPositions: 1,
+      cooldownAfterLossMs: 5 * 60 * 1000,
+    },
+
+    status: 'idle',
+  };
+
+  // Create agents in database
+  const btcConfig = await manager.createAgent(btcAgent);
+  const ethConfig = await manager.createAgent(ethAgent);
+  const solConfig = await manager.createAgent(solAgent);
+
+  log.info('Demo agents created in database');
+
+  // Start all agents
+  await manager.startAgent(btcConfig.id);
+  await manager.startAgent(ethConfig.id);
+  await manager.startAgent(solConfig.id);
+
+  log.info('=== AgentPit Engine Running ===');
+  log.info(`Managing ${manager.listAgents().length} active agents`);
+  log.info('Press Ctrl+C to stop');
 
   // Listen to agent events
-  agent.on('event', (event) => {
+  manager.on('agent-event', (event) => {
     switch (event.type) {
       case 'decision':
-        log.info(`Decision: ${event.decision.action} | Confidence: ${event.decision.confidence}%`);
+        log.info(`[${event.agentId.substring(0, 8)}] Decision: ${event.decision.action} (confidence: ${event.decision.confidence}%)`);
         break;
       case 'trade':
-        log.info(`Trade: ${event.trade.action} ${event.trade.side} ${event.trade.size} ${event.trade.symbol} @ $${event.trade.price}`);
+        log.info(`[${event.agentId.substring(0, 8)}] Trade: ${event.trade.action} ${event.trade.side} ${event.trade.symbol} @ $${event.trade.price}`);
         if (event.trade.realizedPnl !== undefined) {
           log.info(`  PnL: $${event.trade.realizedPnl.toFixed(2)}`);
         }
         break;
       case 'risk_alert':
-        log.warn(`Risk Alert: ${event.alert}`);
+        log.warn(`[${event.agentId.substring(0, 8)}] Risk Alert: ${event.alert}`);
         break;
       case 'error':
-        log.error(`Error: ${event.error}`);
+        log.error(`[${event.agentId.substring(0, 8)}] Error: ${event.error}`);
         break;
       case 'status_change':
-        log.info(`Status: ${event.from} -> ${event.to}`);
+        log.info(`[${event.agentId.substring(0, 8)}] Status: ${event.from} -> ${event.to}`);
         break;
     }
   });
 
-  // Start the agent
-  await agent.start();
-
   // Graceful shutdown
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     log.info('Shutting down...');
-    agent.stop();
+    await manager.shutdown();
     marketData.disconnect();
     process.exit(0);
   });
 
-  process.on('SIGTERM', () => {
+  process.on('SIGTERM', async () => {
     log.info('Shutting down...');
-    agent.stop();
+    await manager.shutdown();
     marketData.disconnect();
     process.exit(0);
   });
 
-  log.info('=== AgentPit Engine Running ===');
-  log.info(`Agent "${agentConfig.name}" is trading ${agentConfig.symbol} with ${agentConfig.strategy.template} strategy`);
-  log.info('Press Ctrl+C to stop');
+  // Log scheduler stats every minute
+  setInterval(async () => {
+    const stats = await manager.getSchedulerStats();
+    log.info(`Scheduler: ${stats.active} active | ${stats.waiting} waiting | ${stats.completed} completed | ${stats.failed} failed`);
+  }, 60 * 1000);
 }
 
 main().catch((err) => {
