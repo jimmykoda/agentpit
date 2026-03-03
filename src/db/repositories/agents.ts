@@ -116,14 +116,21 @@ export class AgentRepository {
   /**
    * List all agents for a user
    */
-  async listByUser(userId: string): Promise<AgentConfig[]> {
+  async listByUser(userId: string, limit?: number, offset?: number): Promise<AgentConfig[]> {
     const supabase = getSupabase();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('agents')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (limit !== undefined) {
+      const from = offset || 0;
+      query = query.range(from, from + limit - 1);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       log.error('Failed to list agents', error);

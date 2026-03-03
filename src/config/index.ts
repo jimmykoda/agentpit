@@ -66,6 +66,14 @@ export const config = {
     defaultCooldownMs: 60 * 1000, // 1 min after loss
   },
 
+  // API
+  api: {
+    port: parseInt(process.env.API_PORT || '3000', 10),
+    host: process.env.API_HOST || '0.0.0.0',
+    jwtSecret: process.env.JWT_SECRET || 'agentpit-dev-secret-change-me',
+    corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(','),
+  },
+
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info',
 };
